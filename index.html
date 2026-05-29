@@ -827,6 +827,9 @@ function updateBoss(dt) {
     return;
   }
 
+  // Boss intro finished -> switch back to PLAYING so game logic works normally
+  if (state === STATE.BOSS_INTRO) state = STATE.PLAYING;
+
   // Movement
   boss.moveTimer -= dt;
   if (boss.moveTimer <= 0) {
