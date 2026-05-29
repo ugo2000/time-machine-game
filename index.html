@@ -283,6 +283,7 @@ let screenShake = 0;
 let bossActive = false;
 let bossIntroTimer = 0;
 let levelCompleteTimer = 0;
+let levelCompleteAutoAdvance = 0;
 let gameOverTimer = 0;
 let gameTime = 0;
 let waveTimer = 0;
@@ -1262,8 +1263,10 @@ function completeLevel() {
   if (currentLevel < 5) unlockedLevels[currentLevel + 1] = true;
   audio.stopMusic();
   audio.startMusic(8); // victory
-  levelCompleteTimer = 5;
+  levelCompleteTimer = 3;
   showMessage("LEVEL COMPLETE!", '#ff0');
+  // Auto-advance timer starts
+  levelCompleteAutoAdvance = 3;
 }
 
 function gameOver() {
@@ -1414,7 +1417,15 @@ function drawLevelCompleteOverlay(ctx) {
   }
   ctx.fillStyle = '#0ff';
   ctx.font = '18px sans-serif';
-  ctx.fillText('Click to continue', W/2, H/2 + 120);
+  const nextIdx = currentLevel + 1;
+  if (nextIdx <= 5) {
+    ctx.fillText(`Entering ${LEVELS[nextIdx].name} in ${Math.max(0, Math.ceil(levelCompleteAutoAdvance))}s ...`, W/2, H/2 + 120);
+    ctx.font = '15px sans-serif';
+    ctx.fillStyle = '#888';
+    ctx.fillText('Click to skip', W/2, H/2 + 145);
+  } else {
+    ctx.fillText('Showng Victory...', W/2, H/2 + 120);
+  }
 }
 
 // ===================== VICTORY SCREEN =====================
@@ -1544,20 +1555,25 @@ function gameLoop(timestamp) {
       if (particles[i].life <= 0) particles.splice(i, 1);
     }
     levelCompleteTimer -= dt;
+    levelCompleteAutoAdvance -= dt;
     drawLevelCompleteOverlay(ctx);
-    if (mouse.down && levelCompleteTimer <= 0) {
+
+    // Click to skip / advance early
+    if (mouse.down) {
       mouse.down = false;
-      // Check if all levels complete
-      if (levelComplete.every(c => c)) {
+      levelCompleteAutoAdvance = 0; // skip wait
+    }
+
+    // Auto-advance to next level after timer or click skip
+    if (levelCompleteAutoAdvance <= 0) {
+      if (currentLevel < 5) {
+        // Next level
+        startLevel(currentLevel + 1);
+      } else {
+        // All levels complete -> victory
         state = STATE.VICTORY;
         audio.stopMusic();
         audio.startMusic(8);
-      } else {
-        showLevels();
-        document.getElementById('level-select').style.display = 'flex';
-        state = STATE.TITLE;
-        audio.stopMusic();
-        audio.startMusic(0);
       }
     }
   } else {
