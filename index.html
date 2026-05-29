@@ -634,11 +634,23 @@ const ENEMY_DEFS = {
 function spawnEnemy(type) {
   const def = ENEMY_DEFS[type];
   let x, y;
-  const side = Math.floor(Math.random() * 4);
-  if (side === 0) { x = Math.random() * W; y = -30; }
-  else if (side === 1) { x = W + 30; y = Math.random() * H; }
-  else if (side === 2) { x = Math.random() * W; y = H + 30; }
-  else { x = -30; y = Math.random() * H; }
+  // Stationary turrets spawn inside the arena
+  if (type === 'turret') {
+    x = 80 + Math.random() * (W - 160);
+    y = 80 + Math.random() * (H - 160);
+    // Don't spawn too close to player
+    const pdx = x - player.x, pdy = y - player.y;
+    if (Math.sqrt(pdx*pdx + pdy*pdy) < 150) {
+      x = player.x + (Math.random() > 0.5 ? 1 : -1) * 200;
+      y = player.y + (Math.random() > 0.5 ? 1 : -1) * 200;
+    }
+  } else {
+    const side = Math.floor(Math.random() * 4);
+    if (side === 0) { x = Math.random() * W; y = -30; }
+    else if (side === 1) { x = W + 30; y = Math.random() * H; }
+    else if (side === 2) { x = Math.random() * W; y = H + 30; }
+    else { x = -30; y = Math.random() * H; }
+  }
   enemies.push({
     x, y, vx: 0, vy: 0,
     hp: def.hp, maxHp: def.hp,
@@ -1210,7 +1222,7 @@ function startWave() {
 }
 
 function checkWaveComplete() {
-  if (enemies.length === 0 && enemiesLeftInWave <= enemies.length && !bossActive && state === STATE.PLAYING) {
+  if (!bossActive && state === STATE.PLAYING && enemies.length === 0 && waveNumber > 0) {
     waveTimer -= 1/60;
     if (waveTimer <= 0) {
       waveTimer = 2;
@@ -1240,6 +1252,8 @@ function startLevel(lvlIdx) {
   comboCount = 0;
   comboTimer = 0;
   totalKills = 0;
+  levelCompleteAutoAdvance = 0;
+  levelCompleteTimer = 0;
 
   spawnCollectibles();
   updateHPBar();
@@ -1424,7 +1438,7 @@ function drawLevelCompleteOverlay(ctx) {
     ctx.fillStyle = '#888';
     ctx.fillText('Click to skip', W/2, H/2 + 145);
   } else {
-    ctx.fillText('Showng Victory...', W/2, H/2 + 120);
+    ctx.fillText('Showing Victory...', W/2, H/2 + 120);
   }
 }
 
