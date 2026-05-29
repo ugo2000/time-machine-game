@@ -1269,6 +1269,11 @@ function startLevel(lvlIdx) {
   audio.stopMusic();
   audio.startMusic(lvlIdx + 1);
   showMessage(`${lv.name}`, '#0ff');
+
+  // Trigger first wave after a brief delay
+  setTimeout(() => {
+    if (state === STATE.PLAYING) startWave();
+  }, 2000);
 }
 
 function completeLevel() {
